@@ -1,0 +1,10 @@
+# Operating-system metadata
+[Tt]humbs.db
+[Dd]esktop.ini
+.DS_Store
+
+# MATLAB autosave files and Blender backups
+*.asv
+*.m~
+*.blend1
+*.blend2

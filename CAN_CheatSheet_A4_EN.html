@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CAN Bit Packing / Unpacking - A4 Cheat Sheet</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  :root{
+    --ink:#0f1419; --dim:#606a7a; --line:#d2d8e2; --panel:#f7f9fc;
+    --s1:#2f6fe0; --s2:#e8862b; --s3:#2fa84f; --s4:#d93a3a;
+    --s5:#8a4fd3; --s6:#e3b21a; --s7:#12a7bd; --s8:#d95d97;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#fff;color:var(--ink);
+    font-family:"Segoe UI",Arial,system-ui,sans-serif;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #sheet{width:297mm;height:209mm;padding:6mm 9mm 5mm;display:flex;flex-direction:column;overflow:hidden}
+
+  .head{display:flex;justify-content:space-between;align-items:flex-end;
+        border-bottom:1.3pt solid var(--ink);padding-bottom:1.5mm;gap:4mm}
+  .head h1{margin:0;font-size:16.5pt;font-weight:700}
+  .head h1 span{font-size:9pt;font-weight:400;color:var(--dim);margin-left:3mm}
+  .head .tag{font-size:8pt;color:var(--dim);text-align:right;line-height:1.4;flex:none}
+
+  .body{display:grid;grid-template-columns:132mm 1fr;gap:5mm;margin-top:3mm;flex:1;min-height:0;
+        align-items:start}
+
+  .left{display:flex;flex-direction:column;gap:2.4mm;min-width:0}
+  .mapbox{border:.9pt solid var(--line);border-radius:2.2mm;padding:2.8mm;align-self:start}
+  h2{margin:0 0 1.8mm;font-size:9.2pt;font-weight:700}
+  h2 span{font-weight:400;color:var(--dim);font-size:7.2pt;margin-left:2mm}
+  .gridrow{display:grid;grid-template-columns:9.5mm repeat(8,11.5mm) 14mm;
+           column-gap:1.1mm;align-items:center;margin-bottom:1.1mm}
+  .bitlbl{font-size:7.2pt;color:var(--dim);text-align:center}
+  .rowlbl{font-size:8.2pt;text-align:right;padding-right:.6mm;color:#39414f}
+  .hexlbl{font-size:9.8pt;font-weight:600;padding-left:1.4mm;font-family:Consolas,monospace}
+  .cell{height:8.6mm;border-radius:1.4mm;display:flex;align-items:center;justify-content:center;
+        font-size:10.5pt;font-weight:700;color:#fff;position:relative}
+  .cell.dot::before{content:"";position:absolute;left:1.1mm;top:1.1mm;width:1.8mm;height:1.8mm;
+        border-radius:50%;background:#fff;border:.5pt solid #1a1f27}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:.6mm 3mm;margin-top:1.8mm;
+          border-top:.9pt solid var(--line);padding-top:1.6mm}
+  .chip{display:flex;align-items:center;gap:1.2mm;font-size:7.4pt;color:#2b3340;white-space:nowrap}
+  .chip i{width:2.2mm;height:2.2mm;border-radius:.6mm;flex:none}
+  .chip b{font-weight:600}
+
+  .right{display:flex;flex-direction:column;gap:2.4mm;min-height:0;min-width:0}
+  .codebox{border:.9pt solid var(--line);border-left:2.4pt solid var(--s1);border-radius:1.8mm;
+           background:var(--panel);padding:2mm 2.6mm}
+  .codebox h3{margin:0 0 1.3mm;font-size:8.8pt;font-weight:700}
+  .codebox h3 span{font-weight:400;color:var(--dim);font-size:7pt;margin-left:2mm}
+  .codebox pre{margin:0;font-family:Consolas,"Cascadia Mono",monospace;font-size:7.4pt;
+               line-height:1.36;white-space:pre;color:#16202e}
+  .c{color:#7d8798}
+
+  .rules{border:.9pt solid var(--line);border-left:2.4pt solid var(--s3);border-radius:1.8mm;
+         background:#f5fbf7;padding:2mm 2.6mm}
+  .rules ul{margin:0;padding-left:4mm;columns:2;column-gap:6mm}
+  .rules li{font-size:7.5pt;line-height:1.5;color:#26303d;margin-bottom:.8mm;break-inside:avoid}
+  .rules b{color:#137a3a}
+
+  .foot{margin-top:auto;border:.9pt solid var(--line);border-radius:2mm;padding:1.8mm 3mm;
+        display:flex;align-items:center;justify-content:space-between;gap:4mm}
+  .foot .l{font-size:8.2pt;color:#2b3340;line-height:1.5;min-width:0}
+  .foot .l b{color:#0b0f14}
+  .foot .checks{font-size:7.5pt;color:var(--dim)}
+  .foot .r{font-family:Consolas,monospace;font-size:12pt;font-weight:700;letter-spacing:1.4pt;
+           white-space:nowrap;flex:none}
+  .foot .r span{color:#0b57c9}
+</style>
+</head>
+<body>
+<div id="sheet">
+
+  <div class="head">
+    <h1>CAN Bit Packing / Unpacking <span>Intel (little-endian)</span></h1>
+    <div class="tag">0x18F · BMS_Status · DLC 8<br>row = byte · col = bit · ● = startBit (LSB)</div>
+  </div>
+
+  <div class="body">
+
+    <div class="left">
+      <div class="mapbox">
+        <h2>Bit map <span>number = signal ID · S = signed</span></h2>
+        <div class="gridrow" id="colhdr"></div>
+        <div id="rows"></div>
+        <div class="legend">
+          <div class="chip"><i style="background:var(--s1)"></i><b>1 PackVoltage</b>&nbsp;0-11 · ×0.1V</div>
+          <div class="chip"><i style="background:var(--s5)"></i><b>5 CellVoltMax</b>&nbsp;40-55 · ×0.001V</div>
+          <div class="chip"><i style="background:var(--s2)"></i><b>2 PackCurrent</b>&nbsp;12-23 · ×0.1A S</div>
+          <div class="chip"><i style="background:var(--s6)"></i><b>6 ChargeFlag</b>&nbsp;56</div>
+          <div class="chip"><i style="background:var(--s3)"></i><b>3 SOC</b>&nbsp;24-31 · ×0.4%</div>
+          <div class="chip"><i style="background:var(--s7)"></i><b>7 ThermalMode</b>&nbsp;57-59</div>
+          <div class="chip"><i style="background:var(--s4)"></i><b>4 CellTempMax</b>&nbsp;32-39 · °C S</div>
+          <div class="chip"><i style="background:var(--s8)"></i><b>8 BalanceState</b>&nbsp;60-63</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+
+      <div class="codebox">
+        <h3>Pack <span>Physical value → 1×8 uint8; [] creates a frame</span></h3>
+<pre>function p = can_pack(p,s,phys)
+if isempty(p), p = zeros(1,8,'uint8'); end
+m = bitshift(uint64(1),s.length)-1;    <span class="c">% mask: 2^len-1</span>
+r = round((phys-s.offset)/s.scale);   <span class="c">% physical -> raw</span>
+if s.signed&amp;&amp;r&lt;0, r=r+2^s.length; end <span class="c">% two's complement</span>
+w = typecast(p,'uint64');
+p = typecast(bitor(bitand(w,bitcmp(bitshift(m,s.startBit))),...
+                  bitshift(bitand(uint64(r),m),s.startBit)),'uint8');
+end</pre>
+      </div>
+
+      <div class="codebox" style="border-left-color:var(--s4)">
+        <h3>Unpack <span>1×8 uint8 → physical value</span></h3>
+<pre>function phys = can_unpack(s,p)
+m = bitshift(uint64(1),s.length)-1;
+r = double(bitand(bitshift(typecast(p,'uint64'),-s.startBit),m));
+if s.signed&amp;&amp;r&gt;=2^(s.length-1), r=r-2^s.length; end <span class="c">% signed raw</span>
+phys = r*s.scale + s.offset;
+end</pre>
+      </div>
+
+      <div class="codebox" style="border-left-color:var(--s2)">
+        <h3>Usage <span>Pack all signals / unpack one signal</span></h3>
+<pre>sigs = can_protocol_def();
+phys = [398.6 -125.7 76.4 34 3.652 1 3 5];
+p = []; for k=1:8, p = can_pack(p,sigs(k),phys(k)); end
+fprintf('%02X ',p)                    <span class="c">% 92 7F B1 BF 22 44 0E 57</span>
+can_unpack(sigs(2),p)                 <span class="c">% -125.7</span>
+find(can_pack(p,sigs(6),0)~=p)-1      <span class="c">% 7 (Byte7 only)</span>
+p(4) = uint8(191);                    <span class="c">% aligned byte: SOC = 76.4%</span></pre>
+      </div>
+
+      <div class="rules">
+        <ul>
+          <li><b>Byte0 = payload(1)</b>; sent first. startBit = LSB position.</li>
+          <li><b>Cross-byte:</b> bit index +1; bit7 → next byte's bit0.</li>
+          <li><b>16-bit Intel:</b> low byte first (44 0E), not 0E 44.</li>
+          <li><b>Negative raw:</b> add 2^len, then cast and mask.</li>
+          <li><b>Quantization:</b> always round the raw value.</li>
+          <li><b>Aligned 8-bit (unsigned):</b> <code>p(b)=uint8(raw)</code>, <code>b=startBit/8+1</code>.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="l">
+      <b>398.6 V · -125.7 A · 76.4 % · 34 °C · 3.652 V · flag 1 · mode 3 · bal 5</b>
+      <div class="checks">Check hex → toggle one bit → round-trip limit values</div>
+    </div>
+    <div class="r"><span>0x18F :</span> 92 7F B1 BF 22 44 0E 57</div>
+  </div>
+
+</div>
+
+<script>
+const HEX = ['92','7F','B1','BF','22','44','0E','57'];
+const OWNER = [1,1,1,1,1,1,1,1, 1,1,1,1,2,2,2,2, 2,2,2,2,2,2,2,2,
+               3,3,3,3,3,3,3,3, 4,4,4,4,4,4,4,4, 5,5,5,5,5,5,5,5,
+               5,5,5,5,5,5,5,5, 6,7,7,7,8,8,8,8];
+const START = {1:0,2:12,3:24,4:32,5:40,6:56,7:57,8:60};
+const COL = {1:'var(--s1)',2:'var(--s2)',3:'var(--s3)',4:'var(--s4)',
+             5:'var(--s5)',6:'var(--s6)',7:'var(--s7)',8:'var(--s8)'};
+document.getElementById('colhdr').innerHTML = '<div></div>' +
+  [7,6,5,4,3,2,1,0].map(b => `<div class="bitlbl">bit${b}</div>`).join('') + '<div></div>';
+const rows = document.getElementById('rows');
+for (let r = 0; r < 8; r++) {
+  let h = `<div class="gridrow"><div class="rowlbl">Byte${r}</div>`;
+  for (let c = 0; c < 8; c++) {
+    const bit = r*8 + (7-c), sid = OWNER[bit];
+    const dot = (sid && START[sid] === bit) ? ' dot' : '';
+    h += `<div class="cell${dot}" style="background:${COL[sid]}">${sid}</div>`;
+  }
+  h += `<div class="hexlbl">0x${HEX[r]}</div></div>`;
+  rows.innerHTML += h;
+}
+</script>
+</body>
+</html>

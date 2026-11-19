@@ -1,0 +1,51 @@
+VERSION ""
+
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: BMS VCU
+
+BO_ 399 BMS_Status: 8 BMS
+ SG_ PackVoltage : 0|12@1+ (0.1,0) [0|409.5] "V" VCU
+ SG_ PackCurrent : 12|12@1- (0.1,0) [-204.8|204.7] "A" VCU
+ SG_ SOC : 24|8@1+ (0.4,0) [0|102] "%" VCU
+ SG_ CellTempMax : 32|8@1- (1,0) [-128|127] "degC" VCU
+ SG_ CellVoltMax : 40|16@1+ (0.001,0) [0|65.535] "V" VCU
+ SG_ ChargeFlag : 56|1@1+ (1,0) [0|1] "" VCU
+ SG_ ThermalMode : 57|3@1+ (1,0) [0|7] "" VCU
+ SG_ BalanceState : 60|4@1+ (1,0) [0|15] "" VCU
+
+CM_ BO_ 399 "BMS status example: all Intel (little-endian), cross-byte signals";
+CM_ SG_ 399 PackVoltage "12 bit across Byte0 and Byte1 low nibble";
+CM_ SG_ 399 PackCurrent "12 bit, LSB at Byte1.bit4, spans Byte1 high nibble and Byte2";
+CM_ SG_ 399 CellVoltMax "16 bit little-endian: low byte in Byte5, high byte in Byte6";
